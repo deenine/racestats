@@ -127,6 +127,9 @@ def gen_stats(racelist,racename):
     return results
 
 # check compliance with car 0 - TBD work out how to handle weights
+# Racelist is a list of lists containing race cars 
+# racename is a string with the name of the race e.g. 'github trophy'
+# key_line is a list of column titles
 def check_compliance(racelist,racename,key_line):
     checked_columns = {"Race" : [], "Practice" : []}
     results = {"Race" : [], "Practice" : []}
@@ -251,7 +254,9 @@ split_by_race = split_race(raw_csv)
 race_stats = gen_stats(raw_csv, "All races")
 print_results(race_stats)
 
-check_compliance(split_by_race["Gerry Marshall Trophy"], "Gerry Marshall Trophy", raw_csv[0])
+#uncomment and complete 'name' with a race name to check compliance for a single race
+name = ""
+check_compliance(split_by_race[name], name, raw_csv[0])
 
 #Get stats per race and list compliance
 #for race in split_by_race.keys():
