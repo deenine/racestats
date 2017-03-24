@@ -33,7 +33,8 @@ def readcsv(inputfilename):
     count = 1
     for row in csvdata:
         if len(row) != title_len:
-            print "WARNING: row %d has %d cells, expected %d" % (count, len(row), title_len)
+            if DEBUG:
+                print "WARNING: row %d has %d cells, expected %d" % (count, len(row), title_len)
         count += 1
     return csvdata
 
@@ -54,7 +55,7 @@ def split_race(carlist):
   if DEBUG:
       print "DEBUG: Split %d rows into %d races:" % (len(carlist), len(classdict))
       for key in classdict.keys():
-          print " - %s : %d" % (key, len(classdict[key]))
+          print "- %s : %d" % (key, len(classdict[key]))
       print ""
   return classdict
 
@@ -124,7 +125,8 @@ def gen_stats(racelist,racename):
             race_count += 1
     # do basic consistency check, this will break if fed list of all cars and they appear in multiple races
     if len(inspected_shelter_list) + len(not_inspected_shelter_list) != race_count:
-        print "WARNING: Count(%d) of race cars in _%s_ does not equal sum(%d) of inspected(%d) and not inspected(%d) cars, possible program error" % (race_count, racename,(len(inspected_shelter_list) + len(not_inspected_shelter_list)), len(inspected_shelter_list), len(not_inspected_shelter_list))
+        if DEBUG:
+            print "WARNING: Count(%d) of race cars in _%s_ does not equal sum(%d) of inspected(%d) and not inspected(%d) cars, possible program error" % (race_count, racename,(len(inspected_shelter_list) + len(not_inspected_shelter_list)), len(inspected_shelter_list), len(not_inspected_shelter_list))
 
     # stick results in a list of lists, so we can either print or CSV easily
     results.append([racename,""])
@@ -201,7 +203,7 @@ def check_compliance(racelist,racename,key_line):
                         non_compliant.append([column,car[column].split("- ")[1]])
                 #Handle weight in else statement here?
                 if column == WEIGHT_ACTUAL:
-                    weight = car[column]
+                    weight = car[column].split(" ")[0]
 
         # if there are any checks completed for this car, store results
         if check_count + sr_check_count + float(weight) > 0:
@@ -220,27 +222,27 @@ def check_compliance(racelist,racename,key_line):
     # print notes from car zero to explain checks
     print "%s" % sr_notes.replace("  ",", ")
     print ""
-    print "Compliance check results:"
+    print "###Compliance check results:"
     for key in ["Practice", "Race"]:
         # print race or practise
-        print "%s:" % key
+        print "####%s:" % key
         for car in results[key]:
             # Print the results of the SR checks
-            print "Car %s: %s %s (%s) - shelter %s" % (car[CAR_NO], car[YEAR], car[CAR_MODEL], car[OWNER].replace("  ",", "), car[SHELTER])
+            print "#####Car %s: %s %s (%s) - shelter %s" % (car[CAR_NO], car[YEAR], car[CAR_MODEL], car[OWNER].replace("  ",", "), car[SHELTER])
             if car[WEIGHT] != 0:
-                print "Checked weight: %skg" % car[WEIGHT]
+                print "* Checked weight: %skg" % car[WEIGHT]
 
             if car[SR_CHECK] > 0:
                 if len(car[SR_INFRACTION_LIST]) == 0:
-                    print "Checked %d supplementary regulations, %d infractions" % (car[SR_CHECK],len(car[SR_INFRACTION_LIST]))
+                    print "* Checked %d supplementary regulations, %d infractions" % (car[SR_CHECK],len(car[SR_INFRACTION_LIST]))
                 elif len(car[SR_INFRACTION_LIST]) == 1:
-                    print "Checked %d supplementary regulations, %d infraction:" % (car[SR_CHECK],len(car[SR_INFRACTION_LIST]))
+                    print "* Checked %d supplementary regulations, %d infraction:" % (car[SR_CHECK],len(car[SR_INFRACTION_LIST]))
                 else:
-                    print "Checked %d supplementary regulations, %d infractions:" % (car[SR_CHECK],len(car[SR_INFRACTION_LIST]))
+                    print "* Checked %d supplementary regulations, %d infractions:" % (car[SR_CHECK],len(car[SR_INFRACTION_LIST]))
 
             for infraction in car[SR_INFRACTION_LIST]:
                 # take the check category (engine, suspension, etc) from the key_line and print with infraction
-                print " - %s: %s" % (key_line[infraction[0]], infraction[1])
+                print "1. %s: %s" % (key_line[infraction[0]], infraction[1])
             # Print the result of other checks
             if car[CHECK] > 0:
                 if len(car[INFRACTION_LIST]) == 0:
@@ -252,16 +254,16 @@ def check_compliance(racelist,racename,key_line):
 
             for infraction in car[INFRACTION_LIST]:
                 # take the check category (engine, suspension, etc) from the key_line and print with infraction
-                print " - %s: %s" % (key_line[infraction[0]], infraction[1])
+                print "1. %s: %s" % (key_line[infraction[0]], infraction[1])
 
             print ""
 
 
 # print results
 def print_results(results_list):
-    print results_list[0][0]
+    print "## " + results_list[0][0]
     for row in results_list[1:]:
-        print (" - %s:  %d") % (row[0], row[1])
+        print ("- %s:  %d") % (row[0], row[1])
     print ""
 
 
@@ -273,14 +275,16 @@ split_by_race = split_race(raw_csv)
 
 #Get race stats for all races
 race_stats = gen_stats(raw_csv[1:], "All races")
+
+print "# Eligibility Scruitineering results"
 print_results(race_stats)
 
 #uncomment and complete 'name' with a race name to check compliance for a single race
-name = "Gerry Marshall Trophy"
-check_compliance(split_by_race[name], name, raw_csv[0])
+#name = ""
+#check_compliance(split_by_race[name], name, raw_csv[0])
 
 #Get stats per race and list compliance
-#for race in split_by_race.keys():
-#    race_stats = gen_stats(split_by_race[race], race)
-#    print_results(race_stats)
-#    check_compliance(split_by_race[race], race, raw_csv[0])
+for race in split_by_race.keys():
+    race_stats = gen_stats(split_by_race[race], race)
+    print_results(race_stats)
+    check_compliance(split_by_race[race], race, raw_csv[0])
