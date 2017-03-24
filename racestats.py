@@ -15,6 +15,8 @@ HTP_NO = 12
 HTP_ISSUE = 10
 HTP_EXPIRE = 11
 NOTES = 43
+WEIGHT_ACTUAL = 29
+WEIGHT_HTP = 13
 
 DEBUG = False
 
@@ -127,7 +129,7 @@ def gen_stats(racelist,racename):
     return results
 
 # check compliance with car 0 - TBD work out how to handle weights
-# Racelist is a list of lists containing race cars 
+# Racelist is a list of lists containing race cars
 # racename is a string with the name of the race e.g. 'github trophy'
 # key_line is a list of column titles
 def check_compliance(racelist,racename,key_line):
@@ -137,6 +139,7 @@ def check_compliance(racelist,racename,key_line):
     SR_CHECK = OWNER + 2
     INFRACTION_LIST = OWNER + 3
     SR_INFRACTION_LIST = OWNER + 4
+    WEIGHT = SR_INFRACTION_LIST + 1
     sr_notes = ""
 
 
@@ -161,6 +164,7 @@ def check_compliance(racelist,racename,key_line):
         non_compliant = []
         sr_check_count = 0
         sr_non_compliant = []
+        weight = 0
 
         if car[CAR_NO] == "0":
             continue
@@ -184,9 +188,11 @@ def check_compliance(racelist,racename,key_line):
                         check_count += 1
                         non_compliant.append([column,car[column].split("- ")[1]])
                 #Handle weight in else statement here?
+                if column == WEIGHT_ACTUAL:
+                    weight = car[column]
 
         # if there are any checks completed for this car, store results
-        if check_count + sr_check_count > 0:
+        if check_count + sr_check_count + float(weight) > 0:
             result = []
             #copy in details up to the owner field
             for cell in range(0, OWNER + 1):
@@ -195,6 +201,7 @@ def check_compliance(racelist,racename,key_line):
             result.append(sr_check_count)
             result.append(non_compliant)
             result.append(sr_non_compliant)
+            result.append(weight)
             results[car[RACE_PRACTICE]].append(result)
         # check other columns that may have been inspected
 
@@ -208,14 +215,16 @@ def check_compliance(racelist,racename,key_line):
         for car in results[key]:
             # Print the results of the SR checks
             print "Car %s: %s %s (%s) - shelter %s" % (car[CAR_NO], car[YEAR], car[CAR_MODEL], car[OWNER].replace("  ",", "), car[SHELTER])
-
-            # TODO: this may break if there are zero checks carried out, test this.
-            if len(car[SR_INFRACTION_LIST]) == 0:
-                print "Checked %d supplementary regulations, %d infractions" % (car[SR_CHECK],len(car[SR_INFRACTION_LIST]))
-            elif len(car[SR_INFRACTION_LIST]) == 1:
-                print "Checked %d supplementary regulations, %d infraction:" % (car[SR_CHECK],len(car[SR_INFRACTION_LIST]))
-            else:
-                print "Checked %d supplementary regulations, %d infractions:" % (car[SR_CHECK],len(car[SR_INFRACTION_LIST]))
+            if car[WEIGHT] != 0:
+                print "Checked weight: %skg" % car[WEIGHT]
+            
+            if car[SR_CHECK] > 0:
+                if len(car[SR_INFRACTION_LIST]) == 0:
+                    print "Checked %d supplementary regulations, %d infractions" % (car[SR_CHECK],len(car[SR_INFRACTION_LIST]))
+                elif len(car[SR_INFRACTION_LIST]) == 1:
+                    print "Checked %d supplementary regulations, %d infraction:" % (car[SR_CHECK],len(car[SR_INFRACTION_LIST]))
+                else:
+                    print "Checked %d supplementary regulations, %d infractions:" % (car[SR_CHECK],len(car[SR_INFRACTION_LIST]))
 
             for infraction in car[SR_INFRACTION_LIST]:
                 # take the check category (engine, suspension, etc) from the key_line and print with infraction
@@ -255,7 +264,7 @@ race_stats = gen_stats(raw_csv, "All races")
 print_results(race_stats)
 
 #uncomment and complete 'name' with a race name to check compliance for a single race
-name = ""
+name = "Gerry Marshall Trophy"
 check_compliance(split_by_race[name], name, raw_csv[0])
 
 #Get stats per race and list compliance
