@@ -67,6 +67,7 @@ def gen_stats(racelist,racename):
     not_inspected_shelter_list = []
     inspected_shelter_list = []
     results = []
+    weighed = {"Race": [], "Practice": []}
 
     if DEBUG:
         print "DEBUG: Stats generator got %d rows" % len(racelist)
@@ -75,7 +76,7 @@ def gen_stats(racelist,racename):
     # that is a dummy to provide the SR requirements for that race
     # append to shelter lists, to remove duplication for race/practice.
     for car in racelist:
-        if car[CAR_NO] == 0:
+        if car[CAR_NO] == "0":
             continue
         # first check the HTP number field
         if (car[HTP_NO] != "") and (car[HTP_NO] != "No Papers"):
@@ -87,7 +88,7 @@ def gen_stats(racelist,racename):
     # then check for No Papers - done seperately in case it is recorded as no
     # papers and then papers were later found
     for car in racelist:
-        if car[CAR_NO] == 0:
+        if car[CAR_NO] == "0":
             continue
         # first check the HTP number field
         if car[HTP_NO] == "No Papers":
@@ -96,7 +97,7 @@ def gen_stats(racelist,racename):
 
     # find cars that we scruitineered but did not capture paper information for
     for car in racelist:
-        if car[CAR_NO] == 0:
+        if car[CAR_NO] == "0":
             continue
         for cell in range(FIRST_DATA_CELL,len(car)):
             if (car[cell] != "") and (car[SHELTER] not in inspected_shelter_list):
@@ -104,13 +105,20 @@ def gen_stats(racelist,racename):
 
     # finally find cars we have not inspected
     for car in racelist:
-        if car[CAR_NO] == 0:
+        if car[CAR_NO] == "0":
             continue
         if (car[SHELTER] not in inspected_shelter_list) and (car[SHELTER] not in not_inspected_shelter_list):
                 not_inspected_shelter_list.append(car[SHELTER])
 
+    # find cars we have weighed
     for car in racelist:
-        if car[CAR_NO] == 0:
+        if car[CAR_NO] == "0":
+            continue
+        if car[WEIGHT_ACTUAL] != "":
+            weighed[car[RACE_PRACTICE]].append(car[SHELTER])
+
+    for car in racelist:
+        if car[CAR_NO] == "0":
             continue
         if car[RACE_PRACTICE] == "Race":
             race_count += 1
@@ -120,11 +128,15 @@ def gen_stats(racelist,racename):
 
     # stick results in a list of lists, so we can either print or CSV easily
     results.append([racename,""])
+    results.append(["Total in race",(len(inspected_shelter_list) + len(not_inspected_shelter_list))])
     results.append(["Inspected",len(inspected_shelter_list)])
     results.append(["Not inspected",len(not_inspected_shelter_list)])
     results.append(["Has papers",len(papers_shelter_list)])
     results.append(["No papers",len(no_papers_shelter_list)])
-    results.append(["Total in race",(len(inspected_shelter_list) + len(not_inspected_shelter_list))])
+    results.append(["Weighed (unique cars)",len(set.union(set(weighed["Race"]), set(weighed["Practice"])))])
+    results.append(["Weighed after Practice",len(weighed["Practice"])])
+    results.append(["Weighed after Race",len(weighed["Race"])])
+
 
     return results
 
@@ -217,7 +229,7 @@ def check_compliance(racelist,racename,key_line):
             print "Car %s: %s %s (%s) - shelter %s" % (car[CAR_NO], car[YEAR], car[CAR_MODEL], car[OWNER].replace("  ",", "), car[SHELTER])
             if car[WEIGHT] != 0:
                 print "Checked weight: %skg" % car[WEIGHT]
-            
+
             if car[SR_CHECK] > 0:
                 if len(car[SR_INFRACTION_LIST]) == 0:
                     print "Checked %d supplementary regulations, %d infractions" % (car[SR_CHECK],len(car[SR_INFRACTION_LIST]))
@@ -260,7 +272,7 @@ raw_csv = readcsv("eligibility_final_car_zero.csv")
 split_by_race = split_race(raw_csv)
 
 #Get race stats for all races
-race_stats = gen_stats(raw_csv, "All races")
+race_stats = gen_stats(raw_csv[1:], "All races")
 print_results(race_stats)
 
 #uncomment and complete 'name' with a race name to check compliance for a single race
