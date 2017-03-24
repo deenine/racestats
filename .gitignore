@@ -1,0 +1,7 @@
+# Dont upload race data
+*.md
+*.xls
+*.xlsx
+*.csv
+*.docx
+*.doc
