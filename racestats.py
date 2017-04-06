@@ -280,7 +280,11 @@ print "# Eligibility Scruitineering results"
 print_results(race_stats)
 
 #uncomment and complete 'name' with a race name to check compliance for a single race
+<<<<<<< HEAD
 #name = ""
+=======
+#name = "Gerry Marshall Trophy"
+>>>>>>> 8aa3742f91aed27d629824c04cbb273e82a2726c
 #check_compliance(split_by_race[name], name, raw_csv[0])
 
 #Get stats per race and list compliance
