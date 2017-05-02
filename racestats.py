@@ -243,14 +243,15 @@ def check_compliance(racelist,racename,key_line):
             for infraction in car[SR_INFRACTION_LIST]:
                 # take the check category (engine, suspension, etc) from the key_line and print with infraction
                 print "1. %s: %s" % (key_line[infraction[0]], infraction[1])
+            
             # Print the result of other checks
             if car[CHECK] > 0:
                 if len(car[INFRACTION_LIST]) == 0:
-                    print "Checked %d other regulations/specifications/requirements, %d infractions" % (car[CHECK],len(car[INFRACTION_LIST]))
+                    print "* Checked %d other regulations/specifications/requirements, %d infractions" % (car[CHECK],len(car[INFRACTION_LIST]))
                 elif len(car[INFRACTION_LIST]) == 1:
-                    print "Checked %d other regulations/specifications/requirements, %d infraction:" % (car[CHECK],len(car[INFRACTION_LIST]))
+                    print "* Checked %d other regulations/specifications/requirements, %d infraction:" % (car[CHECK],len(car[INFRACTION_LIST]))
                 else:
-                    print "Checked %d other regulations/specifications/requirements, %d infractions:" % (car[CHECK],len(car[INFRACTION_LIST]))
+                    print "* Checked %d other regulations/specifications/requirements, %d infractions:" % (car[CHECK],len(car[INFRACTION_LIST]))
 
             for infraction in car[INFRACTION_LIST]:
                 # take the check category (engine, suspension, etc) from the key_line and print with infraction
@@ -280,11 +281,8 @@ print "# Eligibility Scruitineering results"
 print_results(race_stats)
 
 #uncomment and complete 'name' with a race name to check compliance for a single race
-<<<<<<< HEAD
+
 #name = ""
-=======
-#name = "Gerry Marshall Trophy"
->>>>>>> 8aa3742f91aed27d629824c04cbb273e82a2726c
 #check_compliance(split_by_race[name], name, raw_csv[0])
 
 #Get stats per race and list compliance
