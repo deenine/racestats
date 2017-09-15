@@ -3,22 +3,27 @@
 import csv
 
 # Cell numbers in CSV, remember to count from 0 not 1
-RACE_CLASS = 4
-SHELTER = 3
-YEAR = 5
-CAR_NO = 2
-OWNER = 7
-CAR_MODEL = 6
 RACE_PRACTICE = 1
-FIRST_DATA_CELL = 10
-HTP_NO = 12
+CAR_NO = 2
+SHELTER = 3
+RACE_CLASS = 4
+YEAR = 5
+CAR_MODEL = 6
+OWNER = 7
+
+FIRST_DATA_CELL = 17
+SPEC_YEAR = 8
+HTP_NO = 9
 HTP_ISSUE = 10
-HTP_EXPIRE = 11
-NOTES = 43
-WEIGHT_ACTUAL = 29
-WEIGHT_HTP = 13
+HTP_APPLIED_NO = 11
+HTP_EXPIRE = 10 # not collected
+WEIGHT_HTP = 12
+NOTES = 36
+WEIGHT_ACTUAL = 32
 
 DEBUG = False
+
+#rc no,P or R,Car,Shelter No,Class,Year,Make and Model,Owner, Spec yr,HTP number,HTP date,Applied GB No,HTP Weight,HTP Track F,HTP track rear,HTP Wheelbase,Notes,Fuel sys,Oil sys,ROPS,transmission,engine,ignition,brakes,wheels,bodywork,gnd clr,susp,Tyres,Roller rockers,No open cockpit,Aero,Weight (act),F Track,R Track,Wheelbase,Notes,Final Pos,Non compliance issued
 
 # read csv and return list containing rows.
 # Assumes that line 0 is the title line and that all lines should have as many
@@ -64,6 +69,7 @@ def split_race(carlist):
 def gen_stats(racelist,racename):
     race_count = 0 #just used for checking, ignore error with all cars
     papers_shelter_list = []
+    applied_papers_shelter_list = []
     no_papers_shelter_list = []
     not_inspected_shelter_list = []
     inspected_shelter_list = []
@@ -77,28 +83,28 @@ def gen_stats(racelist,racename):
     # that is a dummy to provide the SR requirements for that race
     # append to shelter lists, to remove duplication for race/practice.
     for car in racelist:
-        if car[CAR_NO] == "0":
+        if car[CAR_NO] == "ZZZ":
             continue
         # first check the HTP number field
         if (car[HTP_NO] != "") and (car[HTP_NO] != "No Papers"):
             if car[SHELTER] not in papers_shelter_list:
                 papers_shelter_list.append(car[SHELTER])
-        elif (car[HTP_ISSUE] != "") or (car[HTP_EXPIRE] != "") :
+        elif (car[HTP_APPLIED_NO] != "") :
             if car[SHELTER] not in papers_shelter_list:
-                papers_shelter_list.append(car[SHELTER])
+                applied_papers_shelter_list.append(car[SHELTER])
     # then check for No Papers - done seperately in case it is recorded as no
     # papers and then papers were later found
     for car in racelist:
-        if car[CAR_NO] == "0":
+        if car[CAR_NO] == "ZZZ":
             continue
         # first check the HTP number field
         if car[HTP_NO] == "No Papers":
-            if (car[SHELTER] not in papers_shelter_list) and (car[SHELTER] not in no_papers_shelter_list):
+            if (car[SHELTER] not in papers_shelter_list) and (car[SHELTER] not in no_papers_shelter_list) and (car[SHELTER] not in applied_papers_shelter_list):
                 no_papers_shelter_list.append(car[SHELTER])
 
     # find cars that we scruitineered but did not capture paper information for
     for car in racelist:
-        if car[CAR_NO] == "0":
+        if car[CAR_NO] == "ZZZ":
             continue
         for cell in range(FIRST_DATA_CELL,len(car)):
             if (car[cell] != "") and (car[SHELTER] not in inspected_shelter_list):
@@ -106,20 +112,20 @@ def gen_stats(racelist,racename):
 
     # finally find cars we have not inspected
     for car in racelist:
-        if car[CAR_NO] == "0":
+        if car[CAR_NO] == "ZZZ":
             continue
         if (car[SHELTER] not in inspected_shelter_list) and (car[SHELTER] not in not_inspected_shelter_list):
                 not_inspected_shelter_list.append(car[SHELTER])
 
     # find cars we have weighed
     for car in racelist:
-        if car[CAR_NO] == "0":
+        if car[CAR_NO] == "ZZZ":
             continue
         if car[WEIGHT_ACTUAL] != "":
             weighed[car[RACE_PRACTICE]].append(car[SHELTER])
 
     for car in racelist:
-        if car[CAR_NO] == "0":
+        if car[CAR_NO] == "ZZZ":
             continue
         if car[RACE_PRACTICE] == "Race":
             race_count += 1
@@ -134,6 +140,7 @@ def gen_stats(racelist,racename):
     results.append(["Inspected",len(inspected_shelter_list)])
     results.append(["Not inspected",len(not_inspected_shelter_list)])
     results.append(["Has papers",len(papers_shelter_list)])
+    results.append(["Has applied for papers",len(applied_papers_shelter_list)])
     results.append(["No papers",len(no_papers_shelter_list)])
     results.append(["Weighed (unique cars)",len(set.union(set(weighed["Race"]), set(weighed["Practice"])))])
     results.append(["Weighed after Practice",len(weighed["Practice"])])
@@ -162,7 +169,7 @@ def check_compliance(racelist,racename,key_line):
 
     # build check column list from car zero
     for car in racelist:
-        if car[CAR_NO] == "0":
+        if car[CAR_NO] == "ZZZ":
             for column in range(FIRST_DATA_CELL,len(car)):
                 if car[column] == "OK":
                     checked_columns[car[RACE_PRACTICE]].append(column)
@@ -180,7 +187,7 @@ def check_compliance(racelist,racename,key_line):
         sr_non_compliant = []
         weight = 0
 
-        if car[CAR_NO] == "0":
+        if car[CAR_NO] == "ZZZ":
             continue
 
         # Check columns identified in SRs using car 0
@@ -243,7 +250,7 @@ def check_compliance(racelist,racename,key_line):
             for infraction in car[SR_INFRACTION_LIST]:
                 # take the check category (engine, suspension, etc) from the key_line and print with infraction
                 print "1. %s: %s" % (key_line[infraction[0]], infraction[1])
-            
+
             # Print the result of other checks
             if car[CHECK] > 0:
                 if len(car[INFRACTION_LIST]) == 0:
@@ -271,7 +278,7 @@ def print_results(results_list):
 
 
 #Load the CSV and split it up into a dictionary indexed by race names
-raw_csv = readcsv("eligibility_final_car_zero.csv")
+raw_csv = readcsv("revival_17_final.csv")
 split_by_race = split_race(raw_csv)
 
 #Get race stats for all races
@@ -289,4 +296,4 @@ print_results(race_stats)
 for race in split_by_race.keys():
     race_stats = gen_stats(split_by_race[race], race)
     print_results(race_stats)
-    check_compliance(split_by_race[race], race, raw_csv[0])
+    #check_compliance(split_by_race[race], race, raw_csv[0])
