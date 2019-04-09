@@ -3,22 +3,23 @@
 import csv
 
 # Cell numbers in CSV, remember to count from 0 not 1
-RACE_CLASS = 4
+RACE_CLASS = 1
 SHELTER = 3
-YEAR = 5
+YEAR = 4
 CAR_NO = 2
-OWNER = 7
-CAR_MODEL = 6
-RACE_PRACTICE = 1
-FIRST_DATA_CELL = 10
-HTP_NO = 12
-HTP_ISSUE = 10
-HTP_EXPIRE = 11
-NOTES = 43
-WEIGHT_ACTUAL = 29
+OWNER = 6
+CAR_MODEL = 5
+RACE_PRACTICE = 0
+FIRST_DATA_CELL = 12
+HTP_NO = 8
+HTP_ISSUE = 9
+HTP_EXPIRE = 9
+NOTES = 37
+WEIGHT_ACTUAL = 35
 WEIGHT_HTP = 13
+CHECKED = 12
 
-DEBUG = False
+DEBUG = True
 
 # read csv and return list containing rows.
 # Assumes that line 0 is the title line and that all lines should have as many
@@ -28,7 +29,8 @@ def readcsv(inputfilename):
     with open(inputfilename, 'rb') as csvfile:
         csvreader = csv.reader(csvfile)
         for row in csvreader:
-            csvdata.append(row)
+            if any(x.strip() for x in row):
+                csvdata.append(row)
     title_len = len(csvdata[0])
     count = 1
     for row in csvdata:
@@ -41,10 +43,7 @@ def readcsv(inputfilename):
 # break down csv data into races, by splitting on class/race number
 def split_race(carlist):
   classdict = {}
-  for row in carlist:
-    if row[RACE_CLASS] == "Class":
-        #skip the title row
-        continue
+  for row in carlist[1:]:
     # if the class isnt already in the dictionary, add it and add the car,
     # otherwise just add cars to that class
     if row[RACE_CLASS] not in classdict.keys():
@@ -67,6 +66,7 @@ def gen_stats(racelist,racename):
     no_papers_shelter_list = []
     not_inspected_shelter_list = []
     inspected_shelter_list = []
+    ok_shelter_list = []
     results = []
     weighed = {"Race": [], "Practice": []}
 
@@ -83,16 +83,14 @@ def gen_stats(racelist,racename):
         if (car[HTP_NO] != "") and (car[HTP_NO] != "No Papers"):
             if car[SHELTER] not in papers_shelter_list:
                 papers_shelter_list.append(car[SHELTER])
-        elif (car[HTP_ISSUE] != "") or (car[HTP_EXPIRE] != "") :
-            if car[SHELTER] not in papers_shelter_list:
-                papers_shelter_list.append(car[SHELTER])
+
     # then check for No Papers - done seperately in case it is recorded as no
     # papers and then papers were later found
     for car in racelist:
         if car[CAR_NO] == "0":
             continue
         # first check the HTP number field
-        if car[HTP_NO] == "No Papers":
+        if car[HTP_NO] == "No Papers" or car[HTP_NO] == "":
             if (car[SHELTER] not in papers_shelter_list) and (car[SHELTER] not in no_papers_shelter_list):
                 no_papers_shelter_list.append(car[SHELTER])
 
@@ -103,6 +101,14 @@ def gen_stats(racelist,racename):
         for cell in range(FIRST_DATA_CELL,len(car)):
             if (car[cell] != "") and (car[SHELTER] not in inspected_shelter_list):
                 inspected_shelter_list.append(car[SHELTER])
+    
+    # find cars that are checked OK
+    for car in racelist:
+        if car[CAR_NO] == "0":
+            continue
+        if car[CHECKED] == "OK":
+            if (car[SHELTER] not in papers_shelter_list) and (car[SHELTER] not in no_papers_shelter_list):
+                no_papers_shelter_list.append(car[SHELTER])
 
     # finally find cars we have not inspected
     for car in racelist:
@@ -271,7 +277,7 @@ def print_results(results_list):
 
 
 #Load the CSV and split it up into a dictionary indexed by race names
-raw_csv = readcsv("eligibility_final_car_zero.csv")
+raw_csv = readcsv("77mm.csv")
 split_by_race = split_race(raw_csv)
 
 #Get race stats for all races
@@ -279,6 +285,8 @@ race_stats = gen_stats(raw_csv[1:], "All races")
 
 print "# Eligibility Scruitineering results"
 print_results(race_stats)
+
+exit()
 
 #uncomment and complete 'name' with a race name to check compliance for a single race
 
